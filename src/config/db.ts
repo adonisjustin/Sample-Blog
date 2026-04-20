@@ -1,40 +1,77 @@
 // Database configuration (Post-PHP transition)
 // Using a clean interface for data access
 
+export interface Comment {
+  id: number;
+  author_name: string;
+  content: string;
+  date: string;
+}
+
+export interface Author {
+  id: number;
+  username: string;
+  bio: string;
+  avatar_url?: string;
+}
+
 export interface Post {
   id: number;
   title: string;
+  slug: string;
   content: string;
   excerpt: string;
   date: string;
-  author: string;
+  author: Author;
+  category: string;
+  reactions: number;
+  comments: Comment[];
 }
 
 export const dbConfig = {
-  // In a production app, these would be env vars
   host: "localhost",
   user: "admin",
   database: "blog_db"
 };
 
-// Mock data service
 export const getPosts = async (): Promise<Post[]> => {
-  return [
-    {
-      id: 1,
-      title: "The Essence of Clean Design",
-      content: "Typography and whitespace are the foundation of a minimalist interface.",
-      excerpt: "Why whitespace is your most powerful tool.",
-      date: "2024-03-20",
-      author: "Senior Dev"
-    },
-    {
-      id: 2,
-      title: "From PHP to Modern Full-Stack",
-      content: "Transitioning patterns from server-rendered PHP to modern reactive stacks.",
-      excerpt: "Applying clean architectural principles across languages.",
-      date: "2024-03-18",
-      author: "Senior Dev"
-    }
-  ];
+  const response = await fetch('/api/posts');
+  if (!response.ok) throw new Error('Failed to fetch posts');
+  return response.json();
+};
+
+export const createPost = async (post: Partial<Post>) => {
+  const response = await fetch('/api/posts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(post),
+  });
+  return response.json();
+};
+
+export const updatePost = async (id: number, post: Partial<Post>) => {
+  const response = await fetch(`/api/posts/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(post),
+  });
+  return response.json();
+};
+
+export const deletePost = async (id: number) => {
+  await fetch(`/api/posts/${id}`, { method: 'DELETE' });
+};
+
+export const reactToPost = async (id: number) => {
+  const response = await fetch(`/api/posts/${id}/react`, { method: 'POST' });
+  return response.json();
+};
+
+export const createComment = async (postId: number, comment: { author_name: string, content: string }) => {
+  const response = await fetch(`/api/comments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...comment, postId }),
+  });
+  return response.json();
 };

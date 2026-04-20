@@ -105,7 +105,7 @@ export default function GeminiChatbot() {
                     {m.role === 'user' ? <User size={16} /> : <Bot size={16} />}
                   </div>
                   <div className={`max-w-[80%] rounded-2xl p-4 text-sm leading-relaxed ${m.role === 'user' ? 'bg-natural-accent text-white' : 'bg-natural-surface border border-natural-border text-natural-ink'}`}>
-                    <div className="markdown-body prose prose-sm max-w-none prose-natural">
+                    <div className="markdown-body max-w-none">
                       <ReactMarkdown>{m.text}</ReactMarkdown>
                     </div>
                   </div>

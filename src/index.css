@@ -23,6 +23,10 @@
   @apply border-b border-natural-border py-10 transition-all hover:bg-natural-surface/50 px-6 -mx-6 rounded-3xl;
 }
 
-.admin-panel {
-  @apply fixed bottom-8 right-8 z-50;
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
