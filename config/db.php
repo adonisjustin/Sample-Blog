@@ -6,8 +6,8 @@
 
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'blog_system');
-define('DB_USER', 'admin');
-define('DB_PASS', '');
+define('DB_USER', 'root');
+define('DB_PASS', 'root');
 
 try {
     $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
@@ -18,5 +18,11 @@ try {
     ];
     $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
 } catch (\PDOException $e) {
-    throw new \PDOException($e->getMessage(), (int)$e->getCode());
+    header('Content-Type: application/json');
+    http_response_code(500);
+    echo json_encode([
+        "error" => "Database connection failed",
+        "details" => $e->getMessage()
+    ]);
+    exit;
 }

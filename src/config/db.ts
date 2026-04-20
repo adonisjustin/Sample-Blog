@@ -97,11 +97,11 @@ export const reactToPost = async (id: number) => {
   return response.json();
 };
 
-export const createComment = async (postId: number, comment: { author_name: string, content: string }) => {
+export const createComment = async (post_id: number, comment: { author_name: string, content: string }) => {
   const response = await fetch(`/api/comments`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...comment, postId }),
+    body: JSON.stringify({ ...comment, post_id }),
   });
   return response.json();
 };
