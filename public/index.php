@@ -2,7 +2,33 @@
 /**
  * ARCHITECTURAL BRIDGE: PHP + REACT
  */
-die("DEBUG: INDEX.PHP HIT");
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    if (!(error_reporting() & $errno)) return false;
+    if (ob_get_length()) ob_end_clean();
+    http_response_code(500);
+    echo json_encode([
+        "error" => "PHP Architectural Error",
+        "message" => $errstr,
+        "file" => $errfile,
+        "line" => $errline
+    ]);
+    exit;
+});
+
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error !== null && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        if (ob_get_length()) ob_end_clean();
+        http_response_code(500);
+        echo json_encode([
+            "error" => "PHP Critical Failure",
+            "message" => $error['message'],
+            "file" => $error['file'],
+            "line" => $error['line']
+        ]);
+        exit;
+    }
+});
 
 // Core Headers (Priority)
 header('Content-Type: application/json');
@@ -17,11 +43,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // Professional Error Reporting for PSR compliance and debugging
-ini_set('display_errors', 1); 
+ini_set('display_errors', 0); 
 error_reporting(E_ALL);
 
 // Ensure clean JSON output
-// ob_start(); // Disable for debugging
+ob_start();
 
 // Helper to get input data
 if (!function_exists('getBodyData')) {
@@ -63,9 +89,11 @@ try {
         }
     }
 } catch (Exception $e) {
+    if (ob_get_length()) ob_end_clean();
     http_response_code(500);
     echo json_encode(["error" => "System Architecture Sync Failure", "details" => $e->getMessage()]);
 } catch (Error $e) {
+    if (ob_get_length()) ob_end_clean();
     http_response_code(500);
     echo json_encode(["error" => "Critical System Failure", "details" => $e->getMessage()]);
 }

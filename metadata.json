@@ -1,6 +1,6 @@
 {
   "name": "Minimalist PHP-Inspired Blog",
-  "description": "A clean, minimalist blog system built with Node.js and React, featuring a Gemini-powered content assistant.",
+  "description": "A refined, minimalist blog architecture built with PHP, MySQL, and React, featuring a Gemini-powered system assistant.",
   "requestFramePermissions": [],
   "majorCapabilities": ["AI Content Generation"]
 }
