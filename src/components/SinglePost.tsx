@@ -42,6 +42,26 @@ export default function SinglePost() {
     }
   };
 
+  const handleShare = async () => {
+    if (!post) return;
+    const shareData = {
+      title: post.title,
+      text: post.excerpt,
+      url: window.location.href,
+    };
+    
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        alert("Architectural URL copied to clipboard.");
+      }
+    } catch (error) {
+      console.error("Share error", error);
+    }
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center font-serif text-2xl animate-pulse">Loading Story...</div>;
   if (!post) return <div className="min-h-screen flex flex-col items-center justify-center font-serif text-[#3d3d2f]">Post not found. <Link to="/" className="mt-4 text-natural-accent underline">Return home</Link></div>;
 
@@ -99,7 +119,7 @@ export default function SinglePost() {
               <span className="text-xs font-bold">{post.comments?.length || 0}</span>
             </button>
           </div>
-          <button className="text-natural-muted hover:text-natural-accent transition-colors">
+          <button onClick={handleShare} className="text-natural-muted hover:text-natural-accent transition-colors">
             <Share2 size={20} />
           </button>
         </div>

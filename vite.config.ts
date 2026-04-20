@@ -20,7 +20,7 @@ export default defineConfig(({mode}) => {
       host: '0.0.0.0',
       proxy: {
         '/api': {
-          target: 'http://blog-system.test', 
+          target: 'http://blog.test', 
           changeOrigin: true,
           secure: false,
         }

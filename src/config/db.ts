@@ -11,12 +11,14 @@ export interface Comment {
 export interface Author {
   id: number;
   username: string;
+  email: string;
   bio: string;
   avatar_url?: string;
 }
 
 export interface Post {
   id: number;
+  user_id?: number;
   title: string;
   slug: string;
   content: string;
@@ -60,6 +62,34 @@ export const updatePost = async (id: number, post: Partial<Post>) => {
 
 export const deletePost = async (id: number) => {
   await fetch(`/api/posts/${id}`, { method: 'DELETE' });
+};
+
+export const getAuthors = async (): Promise<Author[]> => {
+  const response = await fetch('/api/authors');
+  return response.json();
+};
+
+export const createAuthor = async (author: Partial<Author>) => {
+  const response = await fetch('/api/authors', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(author),
+  });
+  return response.json();
+};
+
+export const getSettings = async () => {
+  const response = await fetch('/api/settings');
+  return response.json();
+};
+
+export const updateSettings = async (settings: any) => {
+  const response = await fetch('/api/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings),
+  });
+  return response.json();
 };
 
 export const reactToPost = async (id: number) => {

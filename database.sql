@@ -68,6 +68,26 @@ CREATE TABLE `reactions` (
     FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- Site Settings
+DROP TABLE IF EXISTS `settings`;
+CREATE TABLE `settings` (
+    `key_name` VARCHAR(50) PRIMARY KEY,
+    `value_text` LONGTEXT,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Initial Settings Data
+INSERT INTO `settings` (`key_name`, `value_text`) VALUES
+('title', 'Post.'),
+('description', 'A minimalist exploration of web architecture, clean design, and the evolving relationship between developers and AI.'),
+('primaryColor', '#5a5a40'),
+('allowComments', '1'),
+('maintenanceMode', '0'),
+('privacyPolicy', 'Your privacy is curated with extreme prejudice. We do not track, sell, or broadcast your digital footprint.'),
+('termsOfService', 'Usage of this system implies an appreciation for minimalist design.'),
+('rssContent', 'Our RSS feed is a raw architectural stream.'),
+('philosophy', 'Thinking In Bytes. A minimalist exploration of web architecture, clean design, and the evolving relationship between developers and AI.');
+
 -- Initial Seed Data
 INSERT INTO `users` (`username`, `email`, `password`, `bio`, `role`) VALUES 
 ('senior_php', 'admin@example.com', '$2y$10$UnFkZXJib2FyZC1zaGFyZWQta2V5LXByb3h5...', 'Senior Architect specializing in PHP ecosystem.', 'admin');

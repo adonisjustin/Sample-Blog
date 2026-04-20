@@ -5,51 +5,131 @@
 
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { Search, ArrowRight, Menu, Github } from 'lucide-react';
-import { getPosts, Post } from './config/db';
+import { motion, AnimatePresence } from 'motion/react';
+import { Search, ArrowRight, Menu, Github, Users, X } from 'lucide-react';
+import { getPosts, getSettings, Post } from './config/db';
 import GeminiChatbot from './components/GeminiChatbot';
 import SinglePost from './components/SinglePost';
 import AdminDashboard from './components/AdminDashboard';
 
 function HomeFeed() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
     getPosts().then(data => {
       setPosts(data);
+      setFilteredPosts(data);
       setLoading(false);
     });
   }, []);
 
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredPosts(posts);
+    } else {
+      const lowerQuery = searchQuery.toLowerCase();
+      const filtered = posts.filter(post => 
+        post.title.toLowerCase().includes(lowerQuery) || 
+        post.excerpt.toLowerCase().includes(lowerQuery) || 
+        post.category?.toLowerCase().includes(lowerQuery)
+      );
+      setFilteredPosts(filtered);
+    }
+  }, [searchQuery, posts]);
+
   return (
-    <div className="min-h-screen font-sans">
+    <div className="min-h-screen font-sans bg-natural-bg">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 h-20 bg-white/50 backdrop-blur-md z-40 border-b border-natural-border">
         <div className="max-w-4xl mx-auto px-6 h-full flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <div className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-3">
               <div className="w-8 h-8 bg-natural-accent rounded-lg flex items-center justify-center">
                 <div className="w-3 h-3 border-2 border-white rotate-45" />
               </div>
               <h1 className="font-serif text-xl font-bold tracking-tight text-[#4a4a38]">Post.</h1>
-            </div>
+            </Link>
             <div className="hidden md:flex gap-6 text-[10px] uppercase tracking-[0.2em] font-bold text-natural-muted">
               <Link to="/" className="text-natural-accent border-b-2 border-natural-accent pb-1">Journal</Link>
               <Link to="/admin" className="hover:text-natural-accent transition-colors">Admin Panel</Link>
               <Link to="/philosophy" className="hover:text-natural-accent transition-colors">Philosophy</Link>
               <Link to="/archive" className="hover:text-natural-accent transition-colors">Archive</Link>
+              <Link to="/contributors" className="hover:text-natural-accent transition-colors">Team</Link>
             </div>
           </div>
           <div className="flex items-center gap-6">
-            <button className="p-2 hover:bg-natural-surface rounded-full transition-colors text-natural-muted"><Search size={18} /></button>
+            <button 
+              onClick={() => setIsSearchOpen(true)}
+              className="p-2 hover:bg-natural-surface rounded-full transition-colors text-natural-muted"
+            >
+              <Search size={18} />
+            </button>
             <button className="p-2 hover:bg-natural-surface rounded-full transition-colors md:hidden text-natural-muted"><Menu size={18} /></button>
             <div className="hidden md:block w-px h-6 bg-natural-border mx-2" />
             <a href="https://github.com" target="_blank" className="p-2 hover:bg-natural-surface rounded-full transition-colors text-natural-muted"><Github size={18} /></a>
           </div>
         </div>
       </nav>
+
+      {/* Search Modal */}
+      <AnimatePresence>
+        {isSearchOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-start justify-center pt-32 px-6 bg-natural-ink/40 backdrop-blur-sm"
+            onClick={() => setIsSearchOpen(false)}
+          >
+            <motion.div 
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              className="w-full max-w-2xl bg-white rounded-[40px] shadow-2xl p-10 overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-4 border-b border-natural-border pb-6 mb-8">
+                <Search size={24} className="text-natural-muted" />
+                <input 
+                  autoFocus
+                  type="text" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="What are you looking for?"
+                  className="w-full text-2xl font-serif border-none outline-none text-natural-ink placeholder:text-natural-muted/40"
+                />
+                <button onClick={() => setIsSearchOpen(false)} className="p-2 hover:bg-natural-surface rounded-full text-natural-muted">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="max-h-[400px] overflow-y-auto pr-4 scrollbar-hide">
+                <div className="space-y-6">
+                  {filteredPosts.length > 0 ? filteredPosts.map(post => (
+                    <Link to={`/post/${post.slug}`} key={post.id} onClick={() => setIsSearchOpen(false)} className="block group p-4 hover:bg-natural-surface rounded-2xl transition-all">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-natural-accent tracking-widest mb-1">{post.category}</p>
+                          <h4 className="font-serif text-xl font-bold text-natural-ink group-hover:text-natural-accent">{post.title}</h4>
+                        </div>
+                        <ArrowRight size={18} className="text-natural-muted opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all" />
+                      </div>
+                    </Link>
+                  )) : (
+                    <div className="text-center py-12">
+                      <p className="font-serif italic text-natural-muted">We couldn't find any architectural matches.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Hero Section */}
       <header className="pt-48 pb-24 px-6 max-w-4xl mx-auto">
@@ -76,8 +156,8 @@ function HomeFeed() {
             Array(3).fill(0).map((_, i) => (
               <div key={i} className="h-48 bg-black/5 rounded-3xl animate-pulse" />
             ))
-          ) : (
-            posts.map((post, index) => (
+          ) : filteredPosts.length > 0 ? (
+            filteredPosts.map((post, index) => (
               <Link to={`/post/${post.slug}`} key={post.id}>
                 <motion.article
                   initial={{ opacity: 0, y: 20 }}
@@ -95,7 +175,7 @@ function HomeFeed() {
                       <h3 className="font-serif text-3xl font-bold group-hover:italic transition-all duration-300 text-[#3d3d2f] group-hover:text-natural-accent">
                         {post.title}
                       </h3>
-                      <p className="text-natural-muted leading-relaxed max-w-2xl">
+                      <p className="text-natural-muted leading-relaxed max-w-2xl line-clamp-2">
                         {post.excerpt}
                       </p>
                     </div>
@@ -108,6 +188,10 @@ function HomeFeed() {
                 </motion.article>
               </Link>
             ))
+          ) : (
+            <div className="py-20 text-center">
+              <p className="font-serif text-2xl text-natural-muted italic">No architectural records match your query.</p>
+            </div>
           )}
         </div>
 
@@ -115,9 +199,9 @@ function HomeFeed() {
         <footer className="mt-32 pt-16 border-t border-natural-border flex flex-col md:flex-row items-center justify-between gap-8 text-[10px] uppercase tracking-[0.2em] font-bold text-natural-muted">
           <p>© 2024 Post System. Minimalist Blog Architecture.</p>
           <div className="flex gap-8">
-            <a href="#" className="hover:text-natural-accent transition-colors">Privacy</a>
-            <a href="#" className="hover:text-natural-accent transition-colors">Terms</a>
-            <a href="#" className="hover:text-natural-accent transition-colors">RSS</a>
+            <Link to="/privacy" className="hover:text-natural-accent transition-colors">Privacy</Link>
+            <Link to="/terms" className="hover:text-natural-accent transition-colors">Terms</Link>
+            <Link to="/rss" className="hover:text-natural-accent transition-colors">RSS</Link>
           </div>
         </footer>
       </main>
@@ -129,6 +213,14 @@ function HomeFeed() {
 }
 
 function PhilosophyPage() {
+  const [philosophy, setPhilosophy] = useState('');
+  
+  useEffect(() => {
+    getSettings().then(data => {
+      setPhilosophy(data.philosophy || data.description || 'Thinking In Bytes. A minimalist exploration of web architecture, clean design, and the evolving relationship between developers and AI.');
+    });
+  }, []);
+
   const principles = [
     { title: "Essentialism", desc: "Removing the superfluous to reveal the architectural soul of the digital experience." },
     { title: "Natural Tones", desc: "A palette derived from earth and stone, grounding high-tech bytes in organic reality." },
@@ -150,7 +242,7 @@ function PhilosophyPage() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-24">
           <header>
             <h2 className="font-serif text-6xl font-bold text-[#3d3d2f] mb-8 leading-tight">The Principles of Minimalist Architecture.</h2>
-            <p className="text-xl text-natural-muted leading-relaxed">Our philosophy is built on the belief that code should be as enduring as concrete and as elegant as a drafted blueprint.</p>
+            <p className="text-xl text-natural-muted leading-relaxed italic border-l-4 border-natural-accent/30 pl-8">{philosophy}</p>
           </header>
 
           <div className="space-y-16">
@@ -214,6 +306,97 @@ function ArchivePage() {
   );
 }
 
+function LegalPage({ title, type }: { title: string, type: 'privacyPolicy' | 'termsOfService' | 'rssContent' }) {
+  const [content, setContent] = useState<string>('Loading architectural documentation...');
+  
+  useEffect(() => {
+    getSettings().then(data => {
+      setContent(data[type] || `No specialized ${type} has been drafted for this system yet.`);
+    });
+  }, [type]);
+
+  return (
+    <div className="min-h-screen bg-natural-bg font-sans">
+      <nav className="fixed top-0 left-0 right-0 h-20 bg-white/50 backdrop-blur-md z-40 border-b border-natural-border">
+        <div className="max-w-4xl mx-auto px-6 h-full flex items-center">
+          <Link to="/" className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-natural-surface rounded-lg flex items-center justify-center text-natural-muted font-bold tracking-tighter">L.</div>
+            <h1 className="font-serif text-xl font-bold tracking-tight text-[#4a4a38]">{title}</h1>
+          </Link>
+        </div>
+      </nav>
+
+      <main className="max-w-3xl mx-auto px-6 pt-40 pb-32">
+        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-12">
+          <h2 className="font-serif text-5xl font-bold text-[#3d3d2f] leading-tight">{title}</h2>
+          <div className="prose prose-natural max-w-none">
+            <p className="text-xl text-natural-muted leading-relaxed font-serif italic border-l-4 border-natural-accent/30 pl-8">
+              {content}
+            </p>
+            <div className="mt-12 space-y-6 text-natural-ink leading-relaxed">
+              <p>Architectural documents are prepared with precision. We believe in transparency without complexity.</p>
+              <p>Last architectural update: April 2026.</p>
+            </div>
+          </div>
+          <Link to="/" className="inline-flex items-center gap-3 text-sm font-bold text-natural-accent uppercase tracking-widest hover:gap-5 transition-all">
+            Return to Feed <ArrowRight size={18} />
+          </Link>
+        </motion.div>
+      </main>
+    </div>
+  );
+}
+
+function ContributorsPage() {
+  const [authors, setAuthors] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/posts')
+      .then(res => res.json())
+      .then(data => {
+        const uniqueAuthors = Array.from(new Set(data.map((p: any) => p.author?.id))).map(id => data.find((p: any) => p.author?.id === id).author);
+        setAuthors(uniqueAuthors);
+      });
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-natural-bg font-sans">
+      <nav className="fixed top-0 left-0 right-0 h-20 bg-white/50 backdrop-blur-md z-40 border-b border-natural-border">
+        <div className="max-w-4xl mx-auto px-6 h-full flex items-center">
+          <Link to="/" className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-natural-accent rounded-lg flex items-center justify-center text-white font-bold">C.</div>
+            <h1 className="font-serif text-xl font-bold tracking-tight text-[#4a4a38]">Contributors</h1>
+          </Link>
+        </div>
+      </nav>
+
+      <main className="max-w-4xl mx-auto px-6 pt-40 pb-32">
+        <div className="mb-20">
+          <h2 className="font-serif text-5xl font-bold text-[#3d3d2f] mb-6 tracking-tight">The Minds Behind the Journal.</h2>
+          <p className="text-natural-muted text-lg">A collective of architects and strategists dedicated to digital minimalism.</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-12">
+          {authors.map((author) => (
+            <div key={author?.id} className="bg-natural-surface p-10 rounded-[40px] border border-natural-border shadow-sm flex flex-col items-center text-center">
+              <div className="w-24 h-24 bg-natural-bg rounded-3xl mb-6 overflow-hidden border border-natural-border flex items-center justify-center text-natural-muted">
+                {author?.avatar_url ? (
+                  <img src={author.avatar_url} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <Users size={40} />
+                )}
+              </div>
+              <h3 className="font-serif text-2xl font-bold text-natural-ink mb-2">{author?.username || 'Architect'}</h3>
+              <p className="text-sm text-natural-muted font-bold uppercase tracking-widest mb-6 border-b border-natural-accent/20 pb-2">Author</p>
+              <p className="text-natural-ink/70 leading-relaxed italic">"{author?.bio || 'Specializing in digital foundations and structural design patterns.'}"</p>
+            </div>
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <Router>
@@ -223,6 +406,10 @@ export default function App() {
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/philosophy" element={<PhilosophyPage />} />
         <Route path="/archive" element={<ArchivePage />} />
+        <Route path="/contributors" element={<ContributorsPage />} />
+        <Route path="/privacy" element={<LegalPage title="Privacy Policy" type="privacyPolicy" />} />
+        <Route path="/terms" element={<LegalPage title="Terms of Service" type="termsOfService" />} />
+        <Route path="/rss" element={<LegalPage title="Architectural Feed" type="rssContent" />} />
       </Routes>
     </Router>
   );
