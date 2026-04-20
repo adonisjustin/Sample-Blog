@@ -489,7 +489,7 @@ export default function AdminDashboard() {
                   <label className="text-[10px] uppercase font-bold text-natural-muted tracking-widest">Display Username</label>
                   <input
                     type="text"
-                    value={editingAuthor.username}
+                    value={editingAuthor.username || ''}
                     onChange={e => setEditingAuthor({...editingAuthor, username: e.target.value})}
                     className="w-full bg-natural-surface border border-natural-border rounded-2xl px-6 py-4 text-natural-ink focus:outline-none focus:ring-1 focus:ring-natural-accent/20"
                   />
@@ -498,7 +498,7 @@ export default function AdminDashboard() {
                   <label className="text-[10px] uppercase font-bold text-natural-muted tracking-widest">Email Address</label>
                   <input
                     type="email"
-                    value={editingAuthor.email}
+                    value={editingAuthor.email || ''}
                     onChange={e => setEditingAuthor({...editingAuthor, email: e.target.value})}
                     className="w-full bg-natural-surface border border-natural-border rounded-2xl px-6 py-4 text-natural-ink focus:outline-none focus:ring-1 focus:ring-natural-accent/20"
                   />
@@ -509,7 +509,7 @@ export default function AdminDashboard() {
                 <label className="text-[10px] uppercase font-bold text-natural-muted tracking-widest">Avatar Image URL</label>
                 <input
                   type="text"
-                  value={editingAuthor.avatar_url}
+                  value={editingAuthor.avatar_url || ''}
                   onChange={e => setEditingAuthor({...editingAuthor, avatar_url: e.target.value})}
                   className="w-full bg-natural-surface border border-natural-border rounded-2xl px-6 py-4 text-natural-ink focus:outline-none focus:ring-1 focus:ring-natural-accent/20"
                   placeholder="https://images.unsplash.com/..."
@@ -519,7 +519,7 @@ export default function AdminDashboard() {
               <div className="space-y-2">
                 <label className="text-[10px] uppercase font-bold text-natural-muted tracking-widest">Professional Bio</label>
                 <textarea
-                  value={editingAuthor.bio}
+                  value={editingAuthor.bio || ''}
                   onChange={e => setEditingAuthor({...editingAuthor, bio: e.target.value})}
                   className="w-full bg-natural-surface border border-natural-border rounded-2xl px-6 py-4 text-natural-ink h-32 resize-none focus:outline-none focus:ring-1 focus:ring-natural-accent/20"
                 />
@@ -558,7 +558,7 @@ export default function AdminDashboard() {
                   <label className="text-[10px] uppercase font-bold text-natural-muted tracking-widest">Site Name</label>
                   <input
                     type="text"
-                    value={siteSettings.title}
+                    value={siteSettings.title || ''}
                     onChange={e => setSiteSettings({...siteSettings, title: e.target.value})}
                     className="w-full bg-natural-surface border border-natural-border rounded-2xl px-6 py-4 text-natural-ink focus:outline-none focus:ring-1 focus:ring-natural-accent/20"
                   />
@@ -568,17 +568,17 @@ export default function AdminDashboard() {
                   <div className="flex gap-4 items-center">
                     <input
                       type="color"
-                      value={siteSettings.primaryColor}
+                      value={siteSettings.primaryColor || '#5a5a40'}
                       onChange={e => setSiteSettings({...siteSettings, primaryColor: e.target.value})}
                       className="w-12 h-12 rounded-xl cursor-pointer border-none p-0 overflow-hidden"
                     />
-                    <span className="text-xs font-mono font-bold text-natural-muted">{siteSettings.primaryColor}</span>
+                    <span className="text-xs font-mono font-bold text-natural-muted">{siteSettings.primaryColor || '#5a5a40'}</span>
                   </div>
                 </div>
                 <div className="col-span-2 space-y-2">
                   <label className="text-[10px] uppercase font-bold text-natural-muted tracking-widest">Meta Description</label>
                   <textarea
-                    value={siteSettings.description}
+                    value={siteSettings.description || ''}
                     onChange={e => setSiteSettings({...siteSettings, description: e.target.value})}
                     className="w-full bg-natural-surface border border-natural-border rounded-2xl px-6 py-4 text-natural-ink h-24 resize-none focus:outline-none focus:ring-1 focus:ring-natural-accent/20"
                   />
@@ -612,7 +612,7 @@ export default function AdminDashboard() {
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase font-bold text-natural-muted tracking-widest">Privacy Policy Content</label>
                   <textarea
-                    value={siteSettings.privacyPolicy}
+                    value={siteSettings.privacyPolicy || ''}
                     onChange={e => setSiteSettings({...siteSettings, privacyPolicy: e.target.value})}
                     className="w-full bg-natural-surface border border-natural-border rounded-2xl px-6 py-4 text-natural-ink h-32 resize-none focus:outline-none focus:ring-1 focus:ring-natural-accent/20"
                   />
@@ -621,7 +621,7 @@ export default function AdminDashboard() {
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase font-bold text-natural-muted tracking-widest">Terms of Service Content</label>
                   <textarea
-                    value={siteSettings.termsOfService}
+                    value={siteSettings.termsOfService || ''}
                     onChange={e => setSiteSettings({...siteSettings, termsOfService: e.target.value})}
                     className="w-full bg-natural-surface border border-natural-border rounded-2xl px-6 py-4 text-natural-ink h-32 resize-none focus:outline-none focus:ring-1 focus:ring-natural-accent/20"
                   />
@@ -638,7 +638,7 @@ export default function AdminDashboard() {
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase font-bold text-natural-muted tracking-widest">RSS Feed Summary</label>
                   <textarea
-                    value={siteSettings.rssContent}
+                    value={siteSettings.rssContent || ''}
                     onChange={e => setSiteSettings({...siteSettings, rssContent: e.target.value})}
                     className="w-full bg-natural-surface border border-natural-border rounded-2xl px-6 py-4 text-natural-ink h-24 resize-none focus:outline-none focus:ring-1 focus:ring-natural-accent/20"
                   />

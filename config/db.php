@@ -18,11 +18,6 @@ try {
     ];
     $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
 } catch (\PDOException $e) {
-    header('Content-Type: application/json');
-    http_response_code(500);
-    echo json_encode([
-        "error" => "Database connection failed",
-        "details" => $e->getMessage()
-    ]);
-    exit;
+    // Bubble up to index.php catch block
+    throw new Exception("Core Blueprint Sync Error: " . $e->getMessage());
 }

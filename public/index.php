@@ -1,47 +1,63 @@
 <?php
-// Professional Error Reporting for PSR compliance and debugging
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-require_once __DIR__ . '/../config/db.php';
-
 /**
  * ARCHITECTURAL BRIDGE: PHP + REACT
  * This file acts as the single entry point for all /api requests.
  */
 
+// Core Headers (Priority)
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$method = $_SERVER['REQUEST_METHOD'];
-
-// Helper to get input data
-function getBodyData() {
-    return json_decode(file_get_contents('php://input'), true);
+// Handle Options Preflight
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
 }
 
-// Router (Compatibility Fix for older PHP versions)
-if (strpos($uri, '/api/posts') === 0) {
-    handlePostRequests($method, $uri);
-} else if (strpos($uri, '/api/authors') === 0) {
-    handleAuthorRequests($method, $uri);
-} else if (strpos($uri, '/api/settings') === 0) {
-    handleSettingsRequests($method, $uri);
-} else if (strpos($uri, '/api/comments') === 0) {
-    handleCommentRequests($method, $uri);
-} else {
-    // If not an API request, serve the React Frontend (dist/index.html)
-    if (file_exists(__DIR__ . '/../dist/index.html')) {
-        header('Content-Type: text/html');
-        echo file_get_contents(__DIR__ . '/../dist/index.html');
-    } else {
-        http_response_code(404);
-        echo json_encode(["error" => "Architectural path not found."]);
+// Professional Error Reporting for PSR compliance and debugging
+ini_set('display_errors', 0); // Hide screen-breaking errors
+error_reporting(E_ALL);
+
+try {
+    require_once __DIR__ . '/../config/db.php';
+    
+    $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $method = $_SERVER['REQUEST_METHOD'];
+
+    // Helper to get input data
+    function getBodyData() {
+        $input = file_get_contents('php://input');
+        $data = json_decode($input, true);
+        return is_array($data) ? $data : [];
     }
+
+    // Router (Compatibility Fix for older PHP versions)
+    if (strpos($uri, '/api/posts') === 0) {
+        handlePostRequests($method, $uri);
+    } else if (strpos($uri, '/api/authors') === 0) {
+        handleAuthorRequests($method, $uri);
+    } else if (strpos($uri, '/api/settings') === 0) {
+        handleSettingsRequests($method, $uri);
+    } else if (strpos($uri, '/api/comments') === 0) {
+        handleCommentRequests($method, $uri);
+    } else {
+        // If not an API request, serve the React Frontend (dist/index.html)
+        if (file_exists(__DIR__ . '/../dist/index.html')) {
+            header('Content-Type: text/html');
+            echo file_get_contents(__DIR__ . '/../dist/index.html');
+        } else {
+            http_response_code(404);
+            echo json_encode(["error" => "Architectural path not found."]);
+        }
+    }
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(["error" => "System Architecture Sync Failure", "details" => $e->getMessage()]);
+} catch (Error $e) {
+    http_response_code(500);
+    echo json_encode(["error" => "Critical System Failure", "details" => $e->getMessage()]);
 }
 
 function handlePostRequests($method, $uri) {
@@ -143,7 +159,11 @@ function handleSettingsRequests($method, $uri) {
         $raw = $stmt->fetchAll();
         $settings = [];
         foreach ($raw as $row) {
-            $settings[$row['key_name']] = $row['value_text'];
+            $val = $row['value_text'];
+            // Auto-cast boolean-like strings
+            if ($val === "1") $val = true;
+            if ($val === "0" || $val === "") $val = false;
+            $settings[$row['key_name']] = $val;
         }
         echo json_encode($settings);
     } else if ($method === 'POST') {
