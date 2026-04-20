@@ -38,12 +38,22 @@ Follow these steps to deploy the complete system on your local machine.
    $pass = ''; // Leave empty for default Laragon/XAMPP
    ```
 
-### 5. Frontend Build (React Integration)
-Since this is a decoupled architecture, you must build the React assets so the PHP server can serve them.
+### 5. Deployment Options
+
+#### Option A: Production Build (Recommended)
 1. Open your terminal in the project root.
 2. Install dependencies: `npm install`
 3. Generate the production assets: `npm run build`
-4. This creates a `dist/` folder. Your web server can now serve these static files.
+4. This creates a `dist/` folder. Your PHP web server (Laragon) will serve these static files.
+
+#### Option B: Development Mode (`npm run dev`)
+If you want to edit the Frontend and see changes instantly without rebuilding:
+1. Ensure Laragon is running at `http://blog-system.test`.
+2. Start the Vite dev server: `npm run dev`
+3. Open `http://localhost:3000` in your browser.
+4. **How it works**: Vite will serve the UI, but I have configured a **Proxy** in `vite.config.ts`. Any request to `/api` will be automatically forwarded to your Laragon PHP server.
+
+---
 
 ### 6. The Digital Bridge: Connecting PHP to React
 In a production environment (Laragon/XAMPP), the React frontend and PHP backend communicate via an **API Bridge**:
