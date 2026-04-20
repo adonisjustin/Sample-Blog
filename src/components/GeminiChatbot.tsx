@@ -4,7 +4,18 @@ import { MessageSquare, Send, X, Bot, User, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Initialize AI service lazily to prevent crashing if the key is missing locally
+let ai: GoogleGenAI | null = null;
+const getAI = () => {
+  if (ai) return ai;
+  const apiKey = (import.meta.env.VITE_GEMINI_API_KEY as string) || (process.env.GEMINI_API_KEY as string);
+  if (!apiKey) {
+    console.warn("Gemini API key not found. AI Assistant is disabled.");
+    return null;
+  }
+  ai = new GoogleGenAI({ apiKey });
+  return ai;
+};
 
 interface Message {
   role: 'user' | 'model';
@@ -35,10 +46,15 @@ export default function GeminiChatbot() {
     setIsLoading(true);
 
     try {
+      const genAI = getAI();
+      if (!genAI) {
+        throw new Error("AI Service not initialized. Please set VITE_GEMINI_API_KEY in your .env file for local development.");
+      }
+
       // Determine if the query is complex to enable high thinking
       const isComplex = input.length > 100 || input.toLowerCase().includes('analyze') || input.toLowerCase().includes('write a full');
       
-      const response = await ai.models.generateContent({
+      const response = await genAI.models.generateContent({
         model: isComplex ? "gemini-3.1-pro-preview" : "gemini-3-flash-preview",
         contents: [...messages, userMessage].map(m => ({
           role: m.role,
