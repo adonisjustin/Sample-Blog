@@ -1,0 +1,13 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # 1. Forward all /api requests to our PHP router
+    RewriteRule ^api/.*$ public/index.php [L]
+    
+    # 2. If the file exists in dist, serve it directly (Images, JS, CSS)
+    RewriteCond %{DOCUMENT_ROOT}/dist/%{REQUEST_URI} -f
+    RewriteRule ^(.*)$ dist/$1 [L]
+    
+    # 3. Everything else goes to the React entry point (SPA routing)
+    RewriteRule ^.*$ dist/index.html [L]
+</IfModule>

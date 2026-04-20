@@ -45,10 +45,21 @@ Since this is a decoupled architecture, you must build the React assets so the P
 3. Generate the production assets: `npm run build`
 4. This creates a `dist/` folder. Your web server can now serve these static files.
 
-### 6. API Bridge
-In this preview environment, we use a Node.js API (`server.ts`) for speed. For your local PHP setup:
-- The React frontend makes calls to `/api/*`.
-- You should configure your `public/index.php` to handle these routes or use a PHP router to point `/api/posts` etc., to the classes in `src/Models/`.
+### 6. The Digital Bridge: Connecting PHP to React
+In a production environment (Laragon/XAMPP), the React frontend and PHP backend communicate via an **API Bridge**:
+
+1. **Routing Strategy**: We use the provided `.htaccess` file. It ensures that:
+   - Any URL starting with `/api` is handed over to `public/index.php`.
+   - Any request for assets (like `main.js` from the built `dist` folder) is served directly.
+   - Any other URL (like `/philosophy`) is sent to `dist/index.html` so React Router can handle it.
+
+2. **PHP Controller (`public/index.php`)**: 
+   - This file detects the `REQUEST_METHOD` (GET, POST, etc.) and the URI.
+   - It executes the PDO queries using your `config/db.php` connection.
+   - It returns high-fidelity JSON data back to the React frontend.
+
+3. **Request Flow**:
+   - `React Fetch` -> `Apache (.htaccess)` -> `PHP (index.php)` -> `MySQL (PDO)` -> `JSON Response` -> `React State`.
 
 ---
 
