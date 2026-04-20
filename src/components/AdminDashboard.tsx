@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, FilePlus, Users, MessageSquare, Settings, LogOut, ChevronRight, BarChart3, Edit, Trash2, Save, X, Globe, Bell, Shield, Database, CheckCircle, AlertCircle, UserPlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getPosts, createPost, updatePost, deletePost, getAuthors, createAuthor, getSettings, updateSettings, Post, Author } from '../config/db';
+import { 
+  getPosts, createPost, updatePost, deletePost, 
+  getAuthors, createAuthor, updateAuthor, deleteAuthor, 
+  getSettings, updateSettings, Post, Author 
+} from '../config/db';
 
 type View = 'dashboard' | 'posts' | 'edit-post' | 'comments' | 'authors' | 'edit-author' | 'settings';
 
@@ -198,12 +202,7 @@ export default function AdminDashboard() {
     setIsSaving(true);
     try {
       if (editingAuthor.id) {
-        // Logic for update author if implemented
-        await fetch(`/api/authors/${editingAuthor.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(editingAuthor)
-        });
+        await updateAuthor(editingAuthor.id, editingAuthor);
         addToast("Contributor profile updated.");
       } else {
         await createAuthor(editingAuthor);
@@ -215,6 +214,18 @@ export default function AdminDashboard() {
       addToast("Failed to save profile.", "error");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteAuthor = async (id: number) => {
+    if (confirm("Permanently strip this architect of their credentials?")) {
+      try {
+        await deleteAuthor(id);
+        addToast("Contributor profile removed from archive.");
+        fetchData();
+      } catch (err) {
+        addToast("Failed to remove contributor.", "error");
+      }
     }
   };
 
@@ -469,6 +480,9 @@ export default function AdminDashboard() {
                     <div className="flex flex-col gap-2">
                       <button onClick={() => handleEditAuthor(author)} className="p-3 bg-natural-surface text-natural-muted hover:text-natural-accent rounded-2xl transition-colors">
                         <Edit size={18} />
+                      </button>
+                      <button onClick={() => handleDeleteAuthor(author.id)} className="p-3 bg-natural-surface text-natural-muted hover:text-red-500 rounded-2xl transition-colors">
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   </div>

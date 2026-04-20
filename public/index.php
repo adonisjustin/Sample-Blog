@@ -20,6 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 ini_set('display_errors', 0); // Hide screen-breaking errors
 error_reporting(E_ALL);
 
+// Ensure clean JSON output
+ob_start();
+
 try {
     require_once __DIR__ . '/../config/db.php';
     
@@ -53,9 +56,11 @@ try {
         }
     }
 } catch (Exception $e) {
+    ob_end_clean();
     http_response_code(500);
     echo json_encode(["error" => "System Architecture Sync Failure", "details" => $e->getMessage()]);
 } catch (Error $e) {
+    ob_end_clean();
     http_response_code(500);
     echo json_encode(["error" => "Critical System Failure", "details" => $e->getMessage()]);
 }
@@ -100,27 +105,32 @@ function handlePostRequests($method, $uri) {
                 ];
             }, $posts);
             echo json_encode($structuredPosts);
+            exit;
         }
     } else if ($method === 'POST') {
         $data = getBodyData();
         $stmt = $pdo->prepare("INSERT INTO posts (user_id, title, slug, excerpt, content, category_id) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$data['user_id'] ?? 1, $data['title'], $data['slug'], $data['excerpt'], $data['content'], $data['category_id'] ?? null]);
+        $stmt->execute([$data['user_id'] ?? 1, $data['title'] ?? 'Untitled', $data['slug'] ?? 'post-'.time(), $data['excerpt'] ?? '', $data['content'] ?? '', $data['category_id'] ?? null]);
         echo json_encode(['id' => $pdo->lastInsertId(), 'status' => 'Post created']);
+        exit;
     } else if ($method === 'PUT' && $id) {
         $data = getBodyData();
         $stmt = $pdo->prepare("UPDATE posts SET title = ?, slug = ?, excerpt = ?, content = ?, user_id = ? WHERE id = ?");
-        $stmt->execute([$data['title'], $data['slug'], $data['excerpt'], $data['content'], $data['user_id'] ?? 1, $id]);
+        $stmt->execute([$data['title'] ?? '', $data['slug'] ?? '', $data['excerpt'] ?? '', $data['content'] ?? '', $data['user_id'] ?? 1, $id]);
         echo json_encode(['status' => 'Post updated']);
-    } else if ($method === 'POST' && $id && str_ends_with($uri, '/react')) {
+        exit;
+    } else if ($method === 'POST' && $id && (substr($uri, -6) === '/react')) {
         $stmt = $pdo->prepare("UPDATE posts SET views = views + 1 WHERE id = ?");
         $stmt->execute([$id]);
         $stmt = $pdo->prepare("SELECT views as reactions FROM posts WHERE id = ?");
         $stmt->execute([$id]);
         echo json_encode($stmt->fetch());
+        exit;
     } else if ($method === 'DELETE' && $id) {
         $stmt = $pdo->prepare("DELETE FROM posts WHERE id = ?");
         $stmt->execute([$id]);
         echo json_encode(['status' => 'Post deleted']);
+        exit;
     }
 }
 
@@ -133,21 +143,52 @@ function handleAuthorRequests($method, $uri) {
         if ($id) {
             $stmt = $pdo->prepare("SELECT id, username, bio, avatar_url, email FROM users WHERE id = ?");
             $stmt->execute([$id]);
-            echo json_encode($stmt->fetch());
+            $u = $stmt->fetch();
+            if ($u) {
+                echo json_encode([
+                    'id' => (int)$u['id'],
+                    'username' => $u['username'],
+                    'email' => $u['email'],
+                    'bio' => $u['bio'],
+                    'avatar_url' => $u['avatar_url']
+                ]);
+            } else {
+                http_response_code(404);
+                echo json_encode(['error' => 'Author not found']);
+            }
+            exit;
         } else {
             $stmt = $pdo->query("SELECT id, username, bio, avatar_url, email FROM users ORDER BY username ASC");
-            echo json_encode($stmt->fetchAll());
+            $users = $stmt->fetchAll();
+            $structuredUsers = array_map(function($u) {
+                return [
+                    'id' => (int)$u['id'],
+                    'username' => $u['username'],
+                    'email' => $u['email'],
+                    'bio' => $u['bio'],
+                    'avatar_url' => $u['avatar_url']
+                ];
+            }, $users);
+            echo json_encode($structuredUsers);
+            exit;
         }
     } else if ($method === 'POST') {
         $data = getBodyData();
         $stmt = $pdo->prepare("INSERT INTO users (username, email, bio, avatar_url, password) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$data['username'], $data['email'], $data['bio'] ?? '', $data['avatar_url'] ?? '', password_hash($data['password'] ?? 'peace123', PASSWORD_DEFAULT)]);
-        echo json_encode(['id' => $pdo->lastInsertId(), 'status' => 'Author created']);
+        $stmt->execute([$data['username'] ?? 'New Architect', $data['email'] ?? 'dev@example.com', $data['bio'] ?? '', $data['avatar_url'] ?? '', password_hash($data['password'] ?? 'peace123', PASSWORD_DEFAULT)]);
+        echo json_encode(['id' => (int)$pdo->lastInsertId(), 'status' => 'Author created']);
+        exit;
     } else if ($method === 'PUT' && $id) {
         $data = getBodyData();
         $stmt = $pdo->prepare("UPDATE users SET username = ?, email = ?, bio = ?, avatar_url = ? WHERE id = ?");
-        $stmt->execute([$data['username'], $data['email'], $data['bio'], $data['avatar_url'], $id]);
+        $stmt->execute([$data['username'] ?? '', $data['email'] ?? '', $data['bio'] ?? '', $data['avatar_url'] ?? '', $id]);
         echo json_encode(['status' => 'Author updated']);
+        exit;
+    } else if ($method === 'DELETE' && $id) {
+        $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+        $stmt->execute([$id]);
+        echo json_encode(['status' => 'Author removed']);
+        exit;
     }
 }
 
@@ -165,7 +206,9 @@ function handleSettingsRequests($method, $uri) {
             if ($val === "0" || $val === "") $val = false;
             $settings[$row['key_name']] = $val;
         }
-        echo json_encode($settings);
+        // Force JSON object even if empty
+        echo json_encode((object)$settings);
+        exit;
     } else if ($method === 'POST') {
         $data = getBodyData();
         foreach ($data as $key => $value) {
@@ -173,6 +216,7 @@ function handleSettingsRequests($method, $uri) {
             $stmt->execute([$key, (string)$value, (string)$value]);
         }
         echo json_encode(["status" => "Settings updated"]);
+        exit;
     }
 }
 
@@ -183,19 +227,34 @@ function handleCommentRequests($method, $uri) {
 
     if ($method === 'GET') {
         $stmt = $pdo->query("SELECT * FROM comments ORDER BY created_at DESC");
-        echo json_encode($stmt->fetchAll());
+        $raw = $stmt->fetchAll();
+        $mapped = array_map(function($c) {
+            return [
+                'id' => (int)$c['id'],
+                'post_id' => (int)$c['post_id'],
+                'author_name' => $c['author_name'],
+                'content' => $c['content'],
+                'status' => $c['status'],
+                'date' => date('M j, Y', strtotime($c['created_at']))
+            ];
+        }, $raw);
+        echo json_encode($mapped);
+        exit;
     } else if ($method === 'POST') {
         $data = getBodyData();
         $stmt = $pdo->prepare("INSERT INTO comments (post_id, author_name, content, status) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$data['post_id'], $data['author_name'], $data['content'], 'pending']);
+        $stmt->execute([$data['post_id'] ?? 0, $data['author_name'] ?? 'Guest', $data['content'] ?? '', 'pending']);
         echo json_encode(['id' => $pdo->lastInsertId(), 'status' => 'Dialogue received']);
+        exit;
     } else if ($method === 'PATCH' && $id) {
         $stmt = $pdo->prepare("UPDATE comments SET status = 'approved' WHERE id = ?");
         $stmt->execute([$id]);
         echo json_encode(['status' => 'Dialogue approved']);
+        exit;
     } else if ($method === 'DELETE' && $id) {
         $stmt = $pdo->prepare("DELETE FROM comments WHERE id = ?");
         $stmt->execute([$id]);
         echo json_encode(['status' => 'Dialogue removed']);
+        exit;
     }
 }

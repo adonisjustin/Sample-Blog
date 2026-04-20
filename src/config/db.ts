@@ -78,6 +78,20 @@ export const createAuthor = async (author: Partial<Author>) => {
   return response.json();
 };
 
+export const updateAuthor = async (id: number, author: Partial<Author>) => {
+  const response = await fetch(`/api/authors/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(author),
+  });
+  return response.json();
+};
+
+export const deleteAuthor = async (id: number) => {
+  const response = await fetch(`/api/authors/${id}`, { method: 'DELETE' });
+  return response.json();
+};
+
 export const getSettings = async () => {
   const response = await fetch('/api/settings');
   return response.json();
