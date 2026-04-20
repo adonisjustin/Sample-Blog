@@ -1,8 +1,8 @@
 <?php
 /**
  * ARCHITECTURAL BRIDGE: PHP + REACT
- * This file acts as the single entry point for all /api requests.
  */
+die("DEBUG: INDEX.PHP HIT");
 
 // Core Headers (Priority)
 header('Content-Type: application/json');
@@ -17,11 +17,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // Professional Error Reporting for PSR compliance and debugging
-ini_set('display_errors', 0); // Hide screen-breaking errors
+ini_set('display_errors', 1); 
 error_reporting(E_ALL);
 
 // Ensure clean JSON output
-ob_start();
+// ob_start(); // Disable for debugging
+
+// Helper to get input data
+if (!function_exists('getBodyData')) {
+    function getBodyData() {
+        $input = file_get_contents('php://input');
+        $data = json_decode($input, true);
+        return is_array($data) ? $data : [];
+    }
+}
 
 try {
     require_once __DIR__ . '/../config/db.php';
@@ -29,14 +38,12 @@ try {
     $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     $method = $_SERVER['REQUEST_METHOD'];
 
-    // Helper to get input data
-    function getBodyData() {
-        $input = file_get_contents('php://input');
-        $data = json_decode($input, true);
-        return is_array($data) ? $data : [];
+    // Router (Compatibility Fix for older PHP versions)
+    if ($uri === '/api/health') {
+        echo json_encode(['status' => 'architecture_online', 'php_version' => PHP_VERSION]);
+        exit;
     }
 
-    // Router (Compatibility Fix for older PHP versions)
     if (strpos($uri, '/api/posts') === 0) {
         handlePostRequests($method, $uri);
     } else if (strpos($uri, '/api/authors') === 0) {
@@ -56,11 +63,9 @@ try {
         }
     }
 } catch (Exception $e) {
-    ob_end_clean();
     http_response_code(500);
     echo json_encode(["error" => "System Architecture Sync Failure", "details" => $e->getMessage()]);
 } catch (Error $e) {
-    ob_end_clean();
     http_response_code(500);
     echo json_encode(["error" => "Critical System Failure", "details" => $e->getMessage()]);
 }
@@ -74,7 +79,9 @@ function handlePostRequests($method, $uri) {
         if ($id) {
             $stmt = $pdo->prepare("SELECT p.*, u.username as author_name FROM posts p LEFT JOIN users u ON p.user_id = u.id WHERE p.id = ?");
             $stmt->execute([$id]);
-            echo json_encode($stmt->fetch());
+            $res = $stmt->fetch();
+            echo json_encode($res ? $res : (object)[]);
+            exit;
         } else {
             $stmt = $pdo->query("
                 SELECT p.*, u.username as author_name, u.bio as author_bio, u.avatar_url as author_avatar, c.name as category_name 
@@ -83,6 +90,9 @@ function handlePostRequests($method, $uri) {
                 LEFT JOIN categories c ON p.category_id = c.id 
                 ORDER BY p.created_at DESC
             ");
+            if (!$stmt) {
+                throw new Exception("Query failed: " . implode(" ", $pdo->errorInfo()));
+            }
             $posts = $stmt->fetchAll();
             
             $structuredPosts = array_map(function($p) {
@@ -159,6 +169,9 @@ function handleAuthorRequests($method, $uri) {
             exit;
         } else {
             $stmt = $pdo->query("SELECT id, username, bio, avatar_url, email FROM users ORDER BY username ASC");
+            if (!$stmt) {
+                throw new Exception("Query failed: " . implode(" ", $pdo->errorInfo()));
+            }
             $users = $stmt->fetchAll();
             $structuredUsers = array_map(function($u) {
                 return [
@@ -197,6 +210,9 @@ function handleSettingsRequests($method, $uri) {
     
     if ($method === 'GET') {
         $stmt = $pdo->query("SELECT key_name, value_text FROM settings");
+        if (!$stmt) {
+            throw new Exception("Query failed: " . implode(" ", $pdo->errorInfo()));
+        }
         $raw = $stmt->fetchAll();
         $settings = [];
         foreach ($raw as $row) {
@@ -227,6 +243,9 @@ function handleCommentRequests($method, $uri) {
 
     if ($method === 'GET') {
         $stmt = $pdo->query("SELECT * FROM comments ORDER BY created_at DESC");
+        if (!$stmt) {
+            throw new Exception("Query failed: " . implode(" ", $pdo->errorInfo()));
+        }
         $raw = $stmt->fetchAll();
         $mapped = array_map(function($c) {
             return [
